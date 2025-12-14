@@ -39,17 +39,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":api-call-error"))
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.kotlinx.serialization.json)
         }
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation(libs.ktor.client.mock)
-            implementation(libs.coroutines.test)
         }
     }
 }
