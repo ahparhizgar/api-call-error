@@ -1,36 +1,49 @@
 package io.github.kotlin.fibonacci
 
 import com.ahparhizgar.apicallerror.ApiCallError
+import com.ahparhizgar.apicallerror.InvalidDataError
 import com.ahparhizgar.apicallerror.ktor.ApiCallErrorPlugin
 import com.ahparhizgar.apicallerror.NetworkError
+import com.ahparhizgar.apicallerror.NotFound
 import io.ktor.client.HttpClient
+import io.ktor.client.call.NoTransformationFoundException
 import io.ktor.client.call.body
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
+import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestData
+import io.ktor.client.request.HttpResponseData
 import io.ktor.client.request.get
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.utils.EmptyContent
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.headers
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.charsets.Charsets
+import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class KtorPluginTest {
-    val mockEngine = MockEngine { request ->
-        when (request.url.encodedPath) {
-            "/200" -> respond("", HttpStatusCode.OK)
-            "/400" -> respond("", HttpStatusCode.NotFound)
-            "/network" -> throw Exception("Network error")
-            "/badjson" -> respond("This is not JSON", HttpStatusCode.OK, headers = headersOf("Content-Type" to listOf("application/json")))
-            else -> error(request.url.encodedPath)
-        }
+    var handler: (suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData)? = null
+    val mockEngine2 = MockEngine {
+        handler!!.invoke(this, it)
     }
 
-    val client = HttpClient(mockEngine) {
+    val client = HttpClient(mockEngine2) {
         install(ApiCallErrorPlugin)
         install(ContentNegotiation) {
             json(
@@ -45,29 +58,69 @@ class KtorPluginTest {
 
     @Test
     fun `test setup works ok`() = runTest {
-        client.get("/200").apply {
-            assertEquals(HttpStatusCode.OK, this.status)
+        handler = { request ->
+            respond("", HttpStatusCode.OK)
         }
+        val response = client.get("/")
+        assertEquals(HttpStatusCode.OK, response.status)
     }
 
     @Test
     fun `test 400 error is thrown`() = runTest {
-        assertFailsWith<ApiCallError> {
-            client.get("/400")
+        handler = { request ->
+            respond("", HttpStatusCode.NotFound)
+        }
+        assertFailsWith<NotFound> {
+            client.get("/")
         }
     }
 
     @Test
-    fun `test newtok error`() = runTest {
+    fun `test network error`() = runTest {
+        handler = { request ->
+            throw SocketTimeoutException("Socket timed out")
+        }
         assertFailsWith<NetworkError> {
-            client.get("/network")
+            client.get("/")
         }
     }
 
     @Test
     fun `test content negotiation`() = runTest {
-        assertFailsWith<ApiCallError> {
-            client.get("/badjson").body<TestData>()
+        handler = { request ->
+            respond(
+                content = "{",
+                status = HttpStatusCode.OK,
+                headers = headersOf("Content-Type" to listOf("application/json"))
+            )
+        }
+        assertFailsWith<InvalidDataError> {
+            client.get("/").body<TestData>()
+        }
+    }
+
+    @Test
+    fun `has transformation`() = runTest {
+        handler = { request ->
+            respond(
+                content = """{"id": 1, "name": "Test"}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf("Content-Type" to listOf("application/json"))
+            )
+        }
+        client.get("/").body<TestData>()
+    }
+
+    @Test
+    fun `no transformation`() = runTest {
+        handler = { request ->
+            respond(
+                content = """{"id": 1, "name": "Test"}""",
+                status = HttpStatusCode.OK,
+            )
+        }
+        assertFailsWith<InvalidDataError> {
+            client.get("/").body<TestData>()
         }
     }
 }
