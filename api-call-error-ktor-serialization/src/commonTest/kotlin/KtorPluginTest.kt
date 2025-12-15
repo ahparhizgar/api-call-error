@@ -44,7 +44,6 @@ class KtorPluginTest {
     }
 
     val client = HttpClient(mockEngine2) {
-        install(ApiCallErrorPlugin)
         install(ContentNegotiation) {
             json(
                 Json {
@@ -54,6 +53,7 @@ class KtorPluginTest {
                 }
             )
         }
+        install(ApiCallErrorPlugin)
     }
 
     @Test
@@ -86,7 +86,7 @@ class KtorPluginTest {
     }
 
     @Test
-    fun `test content negotiation`() = runTest {
+    fun `test content negotiation with JsonConvertException`() = runTest {
         handler = { request ->
             respond(
                 content = "{",

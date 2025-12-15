@@ -49,8 +49,8 @@ class ApiCallErrorPlugin private constructor() {
                     else -> originalCall
                 }
             }
-            // TODO add a pipeline phase before Transform to catch JsonConvertException
-            scope.responsePipeline.intercept(HttpResponsePipeline.Transform) {
+
+            scope.responsePipeline.intercept(HttpResponsePipeline.Parse) {
                 try {
                     proceedWith(subject).also {
                         if (!it.response.instanceOf(it.expectedType.type)) {
