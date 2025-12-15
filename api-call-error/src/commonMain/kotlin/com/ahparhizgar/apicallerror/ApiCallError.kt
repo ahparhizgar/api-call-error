@@ -210,15 +210,52 @@ class OtherClientError(
     }
 }
 
-//public fun ClientError(
-//    code: Int,
-//    key: String?,
-//    message: String? = null,
-//    cause: Throwable? = null,
-//): ClientError = when (code) {
-//    HttpStatusCode.UNAUTHORIZED -> Unauthorized(key, message, cause)
-//    HttpStatusCode.FORBIDDEN -> Forbidden(key, message, cause)
-//    HttpStatusCode.NOT_FOUND -> NotFound(key, message, cause)
-//    HttpStatusCode.RATE_LIMIT -> RateLimitReached(key, message, cause)
-//    else -> Other(code, key, message, cause)
-//}
+public fun ClientError(
+    code: Int,
+    key: String? = null,
+    message: String? = null,
+    userMessage: String? = null,
+    cause: Throwable? = null,
+    payload: Any? = null,
+): ClientError = when (HttpStatus.ofCode(code)) {
+    HttpStatus.UNAUTHORIZED -> Unauthorized(
+        message = message,
+        cause = cause,
+        userMessage = userMessage,
+        payload = payload,
+        key = key
+    )
+
+    HttpStatus.FORBIDDEN -> Forbidden(
+        message = message,
+        cause = cause,
+        userMessage = userMessage,
+        payload = payload,
+        key = key
+    )
+
+    HttpStatus.NOT_FOUND -> NotFound(
+        message = message,
+        cause = cause,
+        userMessage = userMessage,
+        payload = payload,
+        key = key
+    )
+
+    HttpStatus.RATE_LIMIT -> RateLimitReached(
+        message = message,
+        cause = cause,
+        userMessage = userMessage,
+        payload = payload,
+        key = key
+    )
+
+    else -> OtherClientError(
+        code = code,
+        message = message,
+        cause = cause,
+        userMessage = userMessage,
+        payload = payload,
+        key = key
+    )
+}
