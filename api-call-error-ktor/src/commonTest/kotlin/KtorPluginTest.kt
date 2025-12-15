@@ -1,8 +1,5 @@
-package io.github.kotlin.fibonacci
+package com.ahparhizgar.apicallerror
 
-import com.ahparhizgar.apicallerror.InvalidDataError
-import com.ahparhizgar.apicallerror.NetworkError
-import com.ahparhizgar.apicallerror.NotFound
 import com.ahparhizgar.apicallerror.ktor.ApiCallErrorPlugin
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -21,16 +18,16 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class KtorPluginTest {
     var handler: (suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData)? = null
-    val mockEngine2 = MockEngine {
+    val mockEngine = MockEngine {
         handler!!.invoke(this, it)
     }
 
-    val client = HttpClient(mockEngine2) {
+    val client = HttpClient(mockEngine) {
         install(ContentNegotiation) {
             json(
                 Json {
@@ -44,17 +41,8 @@ class KtorPluginTest {
     }
 
     @Test
-    fun `test setup works ok`() = runTest {
-        handler = { request ->
-            respond("", HttpStatusCode.OK)
-        }
-        val response = client.get("/")
-        assertEquals(HttpStatusCode.OK, response.status)
-    }
-
-    @Test
-    fun `test 400 error is thrown`() = runTest {
-        handler = { request ->
+    fun `status 400 should be converted to NotFound`() = runTest {
+        handler = {
             respond("", HttpStatusCode.NotFound)
         }
         assertFailsWith<NotFound> {
@@ -63,8 +51,8 @@ class KtorPluginTest {
     }
 
     @Test
-    fun `test network error`() = runTest {
-        handler = { request ->
+    fun `SocketTimeOutException should be converted to NetworkError`() = runTest {
+        handler = {
             throw SocketTimeoutException("Socket timed out")
         }
         assertFailsWith<NetworkError> {
@@ -73,8 +61,20 @@ class KtorPluginTest {
     }
 
     @Test
-    fun `test content negotiation with JsonConvertException`() = runTest {
-        handler = { request ->
+    fun `valid json response should now throw`() = runTest {
+        handler = {
+            respond(
+                content = """{"id": 1, "name": "Test"}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf("Content-Type" to listOf("application/json"))
+            )
+        }
+        client.get("/").body<TestData>()
+    }
+
+    @Test
+    fun `malformed json structure should throw Invalid DataError`() = runTest {
+        handler = {
             respond(
                 content = "{",
                 status = HttpStatusCode.OK,
@@ -87,20 +87,8 @@ class KtorPluginTest {
     }
 
     @Test
-    fun `has transformation`() = runTest {
-        handler = { request ->
-            respond(
-                content = """{"id": 1, "name": "Test"}""",
-                status = HttpStatusCode.OK,
-                headers = headersOf("Content-Type" to listOf("application/json"))
-            )
-        }
-        client.get("/").body<TestData>()
-    }
-
-    @Test
-    fun `no transformation`() = runTest {
-        handler = { request ->
+    fun `json response without content type should throw InvalidDataError`() = runTest {
+        handler = {
             respond(
                 content = """{"id": 1, "name": "Test"}""",
                 status = HttpStatusCode.OK,
@@ -109,6 +97,24 @@ class KtorPluginTest {
         assertFailsWith<InvalidDataError> {
             client.get("/").body<TestData>()
         }
+    }
+
+    @Test
+    fun `json response with missing field should throw InvalidDataError`() = runTest {
+        handler = {
+            respond(
+                content = """{"id": 1}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf("Content-Type" to listOf("application/json"))
+            )
+        }
+        val e = assertFailsWith<InvalidDataError> {
+            client.get("/").body<TestData>()
+        }
+        assertTrue(
+            actual = e.cause?.message?.contains("Field 'name' is required") ?: false,
+            message = "error message of cause should contain Field name is required"
+        )
     }
 }
 

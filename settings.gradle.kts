@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "api-call-error"
 include(":api-call-error")
-include(":api-call-error-ktor-serialization")
+include(":api-call-error-ktor")
