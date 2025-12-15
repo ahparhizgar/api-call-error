@@ -1,22 +1,20 @@
 package com.ahparhizgar.apicallerror.ktor
 
-import com.ahparhizgar.apicallerror.ApiCallError
 import com.ahparhizgar.apicallerror.ClientError
 import com.ahparhizgar.apicallerror.InvalidDataError
 import com.ahparhizgar.apicallerror.NetworkError
-import com.ahparhizgar.apicallerror.NotFound
 import com.ahparhizgar.apicallerror.ServerError
 import io.ktor.client.HttpClient
 import io.ktor.client.call.HttpClientCall
 import io.ktor.client.plugins.HttpClientPlugin
 import io.ktor.client.request.HttpSendPipeline
-import io.ktor.client.statement.HttpResponseContainer
 import io.ktor.client.statement.HttpResponsePipeline
-import io.ktor.http.content.NullBody
+import io.ktor.serialization.ContentConvertException
 import io.ktor.serialization.JsonConvertException
 import io.ktor.util.AttributeKey
 import io.ktor.util.reflect.instanceOf
 import kotlinx.io.IOException
+import kotlinx.serialization.SerializationException
 
 class ApiCallErrorPlugin private constructor() {
     class Config {
@@ -33,20 +31,15 @@ class ApiCallErrorPlugin private constructor() {
 
         override fun install(plugin: ApiCallErrorPlugin, scope: HttpClient) {
             scope.sendPipeline.intercept(HttpSendPipeline.State) {
-                val originalCall = try {
+                val call = try {
                     proceed()
                 } catch (e: IOException) {
-                    throw NetworkError("A network error occurred: ${e.message}")
+                    throw NetworkError(message = "A network failure occurred", cause = e)
                 }
-                originalCall as HttpClientCall
-                when (val code = originalCall.response.status.value) {
-                    in 400..499 -> throw NotFound("HTTP Error: ${originalCall.response.status.value}")
-                    in 500..599 -> throw ServerError(
-                        code = code,
-                        message = "Server Error: ${originalCall.response.status.value}"
-                    )
-
-                    else -> originalCall
+                call as HttpClientCall
+                when (val code = call.response.status.value) {
+                    in 400..499 -> throw ClientError(message = "Client Error ($code)", code = code)
+                    in 500..599 -> throw ServerError(code = code, message = "Server Error ($code)")
                 }
             }
 
@@ -54,14 +47,11 @@ class ApiCallErrorPlugin private constructor() {
                 try {
                     proceedWith(subject).also {
                         if (!it.response.instanceOf(it.expectedType.type)) {
-                            throw InvalidDataError(
-                                "No suitable deserializer found for type ${it.expectedType}. " +
-                                        "Or you may Installed api-call-error plugin after content negotiation."
-                            )
+                            throw InvalidDataError(message = "No suitable deserializer found for type ${it.expectedType}")
                         }
                     }
-                } catch (e: Exception) {
-                    throw InvalidDataError("Failed to deserialize JSON response: ${e.message}")
+                } catch (e: ContentConvertException) {
+                    throw InvalidDataError(message = "Failed to convert JSON response", cause = e.cause)
                 }
             }
         }

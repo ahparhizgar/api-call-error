@@ -10,5 +10,6 @@ internal enum class HttpStatus(val code: Int) {
 
     companion object Companion {
         val codes: List<Int> = entries.map { it.code }
+        fun ofCode(code: Int): HttpStatus? = entries.firstOrNull { it.code == code }
     }
 }
