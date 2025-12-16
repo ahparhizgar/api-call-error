@@ -1,6 +1,7 @@
 package com.ahparhizgar.apicallerror
 
 import com.ahparhizgar.apicallerror.ktor.ApiCallErrorPlugin
+import com.ahparhizgar.apicallerror.ktor.ClientErrorExtras
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.mock.MockEngine
@@ -11,6 +12,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.client.request.get
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
@@ -23,6 +25,7 @@ import kotlin.test.assertTrue
 
 class KtorPluginTest {
     var handler: (suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData)? = null
+    var payloadExtractor: (HttpResponse) -> ClientErrorExtras? = { null }
     val mockEngine = MockEngine {
         handler!!.invoke(this, it)
     }
@@ -37,7 +40,11 @@ class KtorPluginTest {
                 }
             )
         }
-        install(ApiCallErrorPlugin)
+        install(ApiCallErrorPlugin) {
+            extractPayload {
+                this@KtorPluginTest.payloadExtractor(it)
+            }
+        }
     }
 
     @Test
@@ -114,6 +121,37 @@ class KtorPluginTest {
         assertTrue(
             actual = e.cause?.message?.contains("Field 'name' is required") ?: false,
             message = "error message of cause should contain Field name is required"
+        )
+    }
+
+    @Test
+    fun `status 400 with payload extractor should populate ClientErrorExtras`() = runTest {
+        payloadExtractor = { response ->
+            ClientErrorExtras(
+                errorKey = "INVALID_REQUEST",
+                userMessage = "The request was invalid",
+                payload = mapOf("detail" to "Missing required parameter 'id'")
+            )
+        }
+        handler = {
+            respond("", HttpStatusCode.BadRequest)
+        }
+
+        val e = assertFailsWith<ClientError> {
+            client.get("/")
+        }
+
+        assertTrue(
+            actual = e.key == "INVALID_REQUEST",
+            message = "error key should be populated"
+        )
+        assertTrue(
+            actual = e.userMessage == "The request was invalid",
+            message = "user message should be populated"
+        )
+        assertTrue(
+            actual = (e.payload as? Map<*, *>)?.get("detail") == "Missing required parameter 'id'",
+            message = "payload should be populated"
         )
     }
 }
