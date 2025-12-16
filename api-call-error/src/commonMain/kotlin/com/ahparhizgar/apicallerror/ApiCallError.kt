@@ -218,6 +218,14 @@ public fun ClientError(
     cause: Throwable? = null,
     payload: Any? = null,
 ): ClientError = when (HttpStatus.ofCode(code)) {
+    HttpStatus.BAD_REQUEST -> BadRequest(
+        message = message,
+        cause = cause,
+        userMessage = userMessage,
+        payload = payload,
+        key = key
+    )
+
     HttpStatus.UNAUTHORIZED -> Unauthorized(
         message = message,
         cause = cause,

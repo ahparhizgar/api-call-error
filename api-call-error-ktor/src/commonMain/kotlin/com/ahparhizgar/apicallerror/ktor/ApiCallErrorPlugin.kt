@@ -8,17 +8,26 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.HttpClientCall
 import io.ktor.client.plugins.HttpClientPlugin
 import io.ktor.client.request.HttpSendPipeline
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.HttpResponsePipeline
 import io.ktor.serialization.ContentConvertException
-import io.ktor.serialization.JsonConvertException
 import io.ktor.util.AttributeKey
 import io.ktor.util.reflect.instanceOf
 import kotlinx.io.IOException
-import kotlinx.serialization.SerializationException
 
-class ApiCallErrorPlugin private constructor() {
+class ApiCallErrorPlugin private constructor(private val config: Config) {
     class Config {
-        // you can add configuration options here if needed
+        internal var payloadExtractor: (HttpResponse) -> ClientErrorExtras? = { null }
+
+        /**
+         * Called when 4xx or 5xx responses are received to extract additional
+         * information from the response.
+         * [block] receives a [HttpResponse] and should return a [ClientErrorExtras] object.
+         * In case of 5xx responses, only the payload is used.
+         */
+        fun extractPayload(block: (HttpResponse) -> ClientErrorExtras?) {
+            payloadExtractor = block
+        }
     }
 
     companion object Plugin : HttpClientPlugin<Config, ApiCallErrorPlugin> {
@@ -26,7 +35,7 @@ class ApiCallErrorPlugin private constructor() {
 
         override fun prepare(block: Config.() -> Unit): ApiCallErrorPlugin {
             val config = Config().apply(block)
-            return ApiCallErrorPlugin()
+            return ApiCallErrorPlugin(config)
         }
 
         override fun install(plugin: ApiCallErrorPlugin, scope: HttpClient) {
@@ -38,8 +47,25 @@ class ApiCallErrorPlugin private constructor() {
                 }
                 call as HttpClientCall
                 when (val code = call.response.status.value) {
-                    in 400..499 -> throw ClientError(message = "Client Error ($code)", code = code)
-                    in 500..599 -> throw ServerError(code = code, message = "Server Error ($code)")
+                    in 400..499 -> {
+                        val extras = plugin.config.payloadExtractor(call.response)
+                        throw ClientError(
+                            message = "Client Error ($code)",
+                            code = code,
+                            key = extras?.errorKey,
+                            userMessage = extras?.userMessage,
+                            payload = extras?.payload,
+                        )
+                    }
+
+                    in 500..599 -> {
+                        val extras = plugin.config.payloadExtractor(call.response)
+                        throw ServerError(
+                            message = "Server Error ($code)",
+                            code = code,
+                            payload = extras?.payload,
+                        )
+                    }
                 }
             }
 
@@ -51,9 +77,14 @@ class ApiCallErrorPlugin private constructor() {
                         }
                     }
                 } catch (e: ContentConvertException) {
-                    throw InvalidDataError(message = "Failed to convert JSON response", cause = e.cause)
+                    throw InvalidDataError(
+                        message = "Failed to convert JSON response",
+                        cause = e.cause
+                    )
                 }
             }
         }
     }
 }
+
+class ClientErrorExtras(val userMessage: String?, val errorKey: String?, val payload: Any?)
