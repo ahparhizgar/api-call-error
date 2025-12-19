@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
@@ -32,13 +33,7 @@ class KtorPluginTest {
 
     val client = HttpClient(mockEngine) {
         install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
-                    prettyPrint = true
-                }
-            )
+            json(Json)
         }
         install(ApiCallErrorPlugin) {
             extractPayload {
@@ -68,7 +63,7 @@ class KtorPluginTest {
     }
 
     @Test
-    fun `valid json response should now throw`() = runTest {
+    fun `valid json response should run`() = runTest {
         handler = {
             respond(
                 content = """{"id": 1, "name": "Test"}""",
@@ -88,9 +83,10 @@ class KtorPluginTest {
                 headers = headersOf("Content-Type" to listOf("application/json"))
             )
         }
-        assertFailsWith<InvalidDataError> {
+        val e = assertFailsWith<InvalidDataError> {
             client.get("/").body<TestData>()
         }
+        assertContains(e.cause?.message.orEmpty(), "Expected end of the object")
     }
 
     @Test
@@ -101,9 +97,10 @@ class KtorPluginTest {
                 status = HttpStatusCode.OK,
             )
         }
-        assertFailsWith<InvalidDataError> {
+        val e = assertFailsWith<InvalidDataError> {
             client.get("/").body<TestData>()
         }
+        assertContains(e.message.orEmpty(), "No suitable deserializer found")
     }
 
     @Test
@@ -118,10 +115,7 @@ class KtorPluginTest {
         val e = assertFailsWith<InvalidDataError> {
             client.get("/").body<TestData>()
         }
-        assertTrue(
-            actual = e.cause?.message?.contains("Field 'name' is required") ?: false,
-            message = "error message of cause should contain Field name is required"
-        )
+        assertContains(e.cause?.message.orEmpty(), "Field 'name' is required")
     }
 
     @Test
@@ -142,16 +136,16 @@ class KtorPluginTest {
         }
 
         assertTrue(
+            message = "error key should be populated",
             actual = e.key == "INVALID_REQUEST",
-            message = "error key should be populated"
         )
         assertTrue(
+            message = "user message should be populated",
             actual = e.userMessage == "The request was invalid",
-            message = "user message should be populated"
         )
         assertTrue(
+            message = "payload should be populated",
             actual = (e.payload as? Map<*, *>)?.get("detail") == "Missing required parameter 'id'",
-            message = "payload should be populated"
         )
     }
 }
