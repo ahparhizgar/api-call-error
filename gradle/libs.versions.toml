@@ -6,7 +6,8 @@ android-compileSdk = "36"
 #noinspection NewerVersionAvailable
 ktor = "3.0.0"
 coroutines = "1.10.2"
-kotlinx-serialization = "1.7.3"
+#noinspection NewerVersionAvailable
+kotlinx-serialization = "1.0.0"
 logbackClassic = "1.5.22"
 vanniktechMavenPublish = "0.34.0"
 
