@@ -40,8 +40,12 @@ kotlin {
     iosSimulatorArm64()
     linuxX64()
     linuxArm64()
-    js()
-    wasmJs()
+    js {
+        browser()
+    }
+    wasmJs {
+        browser()
+    }
 
     sourceSets {
         commonMain.dependencies {
