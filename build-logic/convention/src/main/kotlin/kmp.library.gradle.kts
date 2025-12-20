@@ -14,8 +14,8 @@ kotlin {
 
     androidLibrary {
         namespace = project.findProperty("MODULE_NAMESPACE") as String
-        compileSdk = 36
-        minSdk = 24
+        compileSdk = (project.findProperty("ANDROID_COMPILE_SDK") as String).toInt()
+        minSdk = (project.findProperty("ANDROID_MIN_SDK") as String).toInt()
 
         withJava() // enable java compilation support
         withHostTestBuilder {}.configure {}
