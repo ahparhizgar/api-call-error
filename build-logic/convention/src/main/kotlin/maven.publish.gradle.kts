@@ -8,9 +8,7 @@ val projectVersion = project.findProperty("VERSION_NAME") as String
 group = projectGroup
 version = projectVersion
 
-// Configure publishing once, for all modules applying this convention
 mavenPublishing {
-    // Centralized POM metadata read from root gradle.properties
     pom {
         name = project.findProperty("POM_NAME") as String
         description = project.findProperty("POM_DESCRIPTION") as String
