@@ -1,5 +1,8 @@
 package com.ahparhizgar.apicallerror
 
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
+
 /**
  * Base class for all errors produced or surfaced by the *Api Call Error* library.
  * Custom errors in calling backed should also extend this class to provide structured error
@@ -79,11 +82,15 @@ public fun invalidData(
  * @param payload optional payload to attach to the thrown error
  * @param message a lambda producing the error message to avoid allocating when condition is true
  */
+@OptIn(ExperimentalContracts::class)
 public fun requireData(
     condition: Boolean,
     payload: Any? = null,
     message: () -> String,
 ) {
+    contract {
+        returns() implies condition
+    }
     if (!condition) {
         invalidData(
             message = message(),
