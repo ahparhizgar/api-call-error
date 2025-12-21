@@ -53,15 +53,13 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // For core library only:
-            implementation("com.github.ahparhizgar.api-call-error:api-call-error:VERSION")
+            implementation("com.github.ahparhizgar:api-call-error:v0.1.0")
             // For Ktor Client plugin:
-            implementation("com.github.ahparhizgar.api-call-error:api-call-error-ktor:VERSION")
+            implementation("com.github.ahparhizgar:api-call-error-ktor:v0.1.0")
         }
     }
 }
 ```
-
-Replace `VERSION` with the latest release version (check the [releases page](https://github.com/ahparhizgar/api-call-error/releases)).
 
 > **Note:** Maven Central support will be added in a future release.
 
