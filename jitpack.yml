@@ -1,9 +1,0 @@
-jdk:
-  - openjdk17
-
-install:
-  - ./gradlew -v
-
-build:
-  - ./gradlew build --no-daemon
-
