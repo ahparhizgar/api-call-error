@@ -32,19 +32,7 @@ ApiCallError (base class)
 
 ## Setup
 
-### Adding the dependency via JitPack
-
-Add JitPack repository to your `settings.gradle.kts`:
-
-```kotlin
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-```
+### Adding the dependency via Maven Central
 
 Add the dependency to your `build.gradle.kts`:
 
@@ -53,15 +41,13 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // For core library only:
-            implementation("com.github.ahparhizgar:api-call-error:v0.1.0")
+            implementation("io.github.ahparhizgar:api-call-error:0.1.0")
             // For Ktor Client plugin:
-            implementation("com.github.ahparhizgar:api-call-error-ktor:v0.1.0")
+            implementation("io.github.ahparhizgar:api-call-error-ktor:0.1.0")
         }
     }
 }
 ```
-
-> **Note:** Maven Central support will be added in a future release.
 
 ## Usage
 
