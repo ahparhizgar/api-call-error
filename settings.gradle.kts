@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "api-call-error"
-include(":api-call-error")
-include(":api-call-error-ktor")
+rootProject.name = "katch"
+include(":katch")
+include(":katch-ktor")

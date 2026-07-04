@@ -7,7 +7,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            api(project(":api-call-error"))
+            api(project(":katch"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
         }

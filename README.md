@@ -1,6 +1,6 @@
-# API Call Error
+# Katch
 
-A Kotlin Multiplatform library that provides structured error handling for API calls. 
+A Kotlin Multiplatform library that provides structured error handling for REST API calls. 
 It defines a comprehensive hierarchy of error types that can be thrown by API clients, making error
 handling consistent, type-safe, and easier to maintain across your application.
 
