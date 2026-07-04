@@ -120,7 +120,7 @@ class KtorPluginTest {
 
     @Test
     fun `status 400 with payload extractor should populate ClientErrorExtras`() = runTest {
-        payloadExtractor = { response ->
+        payloadExtractor = {
             ClientErrorExtras(
                 errorKey = "INVALID_REQUEST",
                 userMessage = "The request was invalid",
