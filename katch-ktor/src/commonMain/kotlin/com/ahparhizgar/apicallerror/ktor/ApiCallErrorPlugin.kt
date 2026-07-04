@@ -50,7 +50,7 @@ class ApiCallErrorPlugin private constructor(private val config: Config) {
                     in 400..499 -> {
                         val extras = plugin.config.payloadExtractor(call.response)
                         throw ClientError(
-                            message = "Client Error ($code)",
+                            message = extras?.debugMessage ?: "Client Error ($code)",
                             code = code,
                             key = extras?.errorKey,
                             userMessage = extras?.userMessage,
@@ -61,7 +61,7 @@ class ApiCallErrorPlugin private constructor(private val config: Config) {
                     in 500..599 -> {
                         val extras = plugin.config.payloadExtractor(call.response)
                         throw ServerError(
-                            message = "Server Error ($code)",
+                            message = extras?.debugMessage ?: "Server Error ($code)",
                             code = code,
                             payload = extras?.payload,
                         )
@@ -89,6 +89,7 @@ class ApiCallErrorPlugin private constructor(private val config: Config) {
 
 class ClientErrorExtras(
     val userMessage: String? = null,
+    val debugMessage: String? = null,
     val errorKey: String? = null,
     val payload: Any? = null
 )
