@@ -1,4 +1,4 @@
-package com.ahparhizgar.apicallerror
+package com.ahparhizgar.katch
 
 internal enum class HttpStatus(val code: Int) {
     UNAUTHORIZED(401),

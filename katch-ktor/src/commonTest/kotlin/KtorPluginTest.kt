@@ -1,7 +1,7 @@
-package com.ahparhizgar.apicallerror
+package com.ahparhizgar.katch
 
-import com.ahparhizgar.apicallerror.ktor.ApiCallErrorPlugin
-import com.ahparhizgar.apicallerror.ktor.ClientErrorExtras
+import com.ahparhizgar.katch.ktor.KatchPlugin
+import com.ahparhizgar.katch.ktor.ClientErrorExtras
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.mock.MockEngine
@@ -35,7 +35,7 @@ class KtorPluginTest {
         install(ContentNegotiation) {
             json(Json)
         }
-        install(ApiCallErrorPlugin) {
+        install(KatchPlugin) {
             extractPayload {
                 this@KtorPluginTest.payloadExtractor(it)
             }

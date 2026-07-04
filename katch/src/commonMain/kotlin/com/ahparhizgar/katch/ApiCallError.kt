@@ -1,10 +1,10 @@
-package com.ahparhizgar.apicallerror
+package com.ahparhizgar.katch
 
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
 /**
- * Base class for all errors produced or surfaced by the *Api Call Error* library.
+ * Base class for all errors produced or surfaced by the *Katch* library.
  * Custom errors in calling backed should also extend this class to provide structured error
  * handling.
  *

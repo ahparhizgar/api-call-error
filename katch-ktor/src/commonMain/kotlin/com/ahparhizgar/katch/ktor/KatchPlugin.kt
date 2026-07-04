@@ -1,9 +1,9 @@
-package com.ahparhizgar.apicallerror.ktor
+package com.ahparhizgar.katch.ktor
 
-import com.ahparhizgar.apicallerror.ClientError
-import com.ahparhizgar.apicallerror.InvalidDataError
-import com.ahparhizgar.apicallerror.NetworkError
-import com.ahparhizgar.apicallerror.ServerError
+import com.ahparhizgar.katch.ClientError
+import com.ahparhizgar.katch.InvalidDataError
+import com.ahparhizgar.katch.NetworkError
+import com.ahparhizgar.katch.ServerError
 import io.ktor.client.HttpClient
 import io.ktor.client.call.HttpClientCall
 import io.ktor.client.plugins.HttpClientPlugin
@@ -15,7 +15,7 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.reflect.instanceOf
 import kotlinx.io.IOException
 
-class ApiCallErrorPlugin private constructor(private val config: Config) {
+class KatchPlugin private constructor(private val config: Config) {
     class Config {
         internal var payloadExtractor: suspend (HttpResponse) -> ClientErrorExtras? = { null }
 
@@ -30,15 +30,15 @@ class ApiCallErrorPlugin private constructor(private val config: Config) {
         }
     }
 
-    companion object Plugin : HttpClientPlugin<Config, ApiCallErrorPlugin> {
-        override val key = AttributeKey<ApiCallErrorPlugin>("ApiCallErrorPlugin")
+    companion object Plugin : HttpClientPlugin<Config, KatchPlugin> {
+        override val key = AttributeKey<KatchPlugin>("KatchPlugin")
 
-        override fun prepare(block: Config.() -> Unit): ApiCallErrorPlugin {
+        override fun prepare(block: Config.() -> Unit): KatchPlugin {
             val config = Config().apply(block)
-            return ApiCallErrorPlugin(config)
+            return KatchPlugin(config)
         }
 
-        override fun install(plugin: ApiCallErrorPlugin, scope: HttpClient) {
+        override fun install(plugin: KatchPlugin, scope: HttpClient) {
             scope.sendPipeline.intercept(HttpSendPipeline.State) {
                 val call = try {
                     proceed()
