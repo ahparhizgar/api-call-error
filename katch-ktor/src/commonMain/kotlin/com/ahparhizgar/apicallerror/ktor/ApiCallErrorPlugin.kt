@@ -87,4 +87,8 @@ class ApiCallErrorPlugin private constructor(private val config: Config) {
     }
 }
 
-class ClientErrorExtras(val userMessage: String?, val errorKey: String?, val payload: Any?)
+class ClientErrorExtras(
+    val userMessage: String? = null,
+    val errorKey: String? = null,
+    val payload: Any? = null
+)
