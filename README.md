@@ -41,9 +41,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // For core library only:
-            implementation("io.github.ahparhizgar:api-call-error:0.1.0")
+            implementation("io.github.ahparhizgar:katch:0.1.0")
             // For Ktor Client plugin:
-            implementation("io.github.ahparhizgar:api-call-error-ktor:0.1.0")
+            implementation("io.github.ahparhizgar:katch-ktor:0.1.0")
         }
     }
 }
@@ -59,7 +59,7 @@ The Ktor plugin automatically converts HTTP errors, network failures, and serial
 
 ```kotlin
 val client = HttpClient {
-    install(ApiCallErrorPlugin)
+    install(KatchPlugin)
     // ...
 }
 ```
@@ -80,7 +80,7 @@ val client = HttpClient {
     install(ContentNegotiation) {
         json()
     }
-    install(ApiCallErrorPlugin) {
+    install(KatchPlugin) {
         extractPayload { response ->
             // Only called for 4xx and 5xx responses
             val errorResponse = try {
