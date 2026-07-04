@@ -17,7 +17,7 @@ import kotlinx.io.IOException
 
 class ApiCallErrorPlugin private constructor(private val config: Config) {
     class Config {
-        internal var payloadExtractor: (HttpResponse) -> ClientErrorExtras? = { null }
+        internal var payloadExtractor: suspend (HttpResponse) -> ClientErrorExtras? = { null }
 
         /**
          * Called when 4xx or 5xx responses are received to extract additional
@@ -25,7 +25,7 @@ class ApiCallErrorPlugin private constructor(private val config: Config) {
          * [block] receives a [HttpResponse] and should return a [ClientErrorExtras] object.
          * In case of 5xx responses, only the payload is used.
          */
-        fun extractPayload(block: (HttpResponse) -> ClientErrorExtras?) {
+        fun extractPayload(block: suspend (HttpResponse) -> ClientErrorExtras?) {
             payloadExtractor = block
         }
     }
